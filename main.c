@@ -14,6 +14,7 @@
 #include "src/controls_menu.c"
 #include "src/music.c"
 #include "src/score.c"
+#include "src/timer.c"
 
 typedef enum {
   main_menu,
@@ -24,11 +25,15 @@ typedef enum {
   game_over,
 } Game_State;
 
+static Game_State game_state = main_menu;
+
 typedef enum {
   play,
   controls,
   exit,
 } Menu_State;
+
+static Menu_State menu_state = play;
 
 void draw_text(Font font, const char *text, Vector2 position, Color color) {
   int font_size = 34, spacing = 1;
@@ -52,6 +57,36 @@ bool is_out_of_bounds(Vector2 position) {
   return false;
 }
 
+void select_effect_update() {
+  switch(game_state) {
+    case playing: break;
+    case paused: break;
+    case hit_stop: break;
+    case game_over: break;
+    case controls_menu: {
+      game_state = main_menu;
+      break;
+    }
+    case main_menu: {
+      switch(menu_state) {
+        case play: {
+          game_state = playing;
+          break;
+        }
+        case controls: {
+          game_state = controls_menu;
+          break;
+        }
+        case exit: {
+          CloseWindow();
+          break;
+        }
+      }
+      break;
+    }
+  }
+}
+
 int main() {
   SetTraceLogLevel(LOG_WARNING);
   InitWindow(screen_width, screen_height, game_title);
@@ -66,8 +101,11 @@ int main() {
   Sound click_sfx = LoadSound("assets/click.wav");
   Sound select_sfx = LoadSound("assets/select.wav");
   Sound booster_sfx = LoadSound("assets/booster.ogg");
-  float select_effect_timer = 0;
-  float select_effect_total_time = 0.6;
+
+  Timer select_effect_timer = {
+    .total = 0.6,
+    .end_fn = select_effect_update,
+  };
 
   init_music();
   init_controls_menu();
@@ -80,47 +118,14 @@ int main() {
 
   float slowmotion_timer = 0;
 
-  Game_State game_state = main_menu;
-  Menu_State menu_state = play;
   score_t highscore = load_highscore();
 
   while (!WindowShouldClose()) {
     float dt = GetFrameTime();
-    update_music(dt);
+    /// @todo:
+    // update_music(dt);
 
-    if (select_effect_timer > 0) {
-      select_effect_timer -= dt;
-      if (select_effect_timer < 0) {
-        select_effect_timer = 0;
-        switch(game_state) {
-          case playing: break;
-          case paused: break;
-          case hit_stop: break;
-          case game_over: break;
-          case controls_menu: {
-            game_state = main_menu;
-            break;
-          }
-          case main_menu: {
-            switch(menu_state) {
-              case play: {
-                game_state = playing;
-                break;
-              }
-              case controls: {
-                game_state = controls_menu;
-                break;
-              }
-              case exit: {
-                CloseWindow();
-                break;
-              }
-            }
-            break;
-          }
-        }
-      }
-    }
+    update_timer(&select_effect_timer, dt);
 
     bool is_slowmotion = slowmotion_timer > 0;
     float slowmotion_factor = is_slowmotion ? 0.05 : 1;
@@ -159,13 +164,13 @@ int main() {
         shoot_bullet(ship_position, ship_rotation_deg);
       }
     }
-    if (IsKeyPressed(KEY_W) && select_effect_timer == 0) {
+    if (IsKeyPressed(KEY_W) && FloatEquals(select_effect_timer.current, 0)) {
       if (game_state == main_menu) {
         PlaySound(click_sfx);
         if(--menu_state == -1) menu_state = 2;
       }
     }
-    if (IsKeyPressed(KEY_S) && select_effect_timer == 0) {
+    if (IsKeyPressed(KEY_S) && FloatEquals(select_effect_timer.current, 0)) {
       if (game_state == main_menu) {
         PlaySound(click_sfx);
         if(++menu_state == 3) menu_state = 0;
@@ -175,13 +180,13 @@ int main() {
     if (IsKeyPressed(KEY_ENTER)) {
       if (game_state == main_menu) {
         PlaySound(select_sfx);
-        select_effect_timer = select_effect_total_time;
+        start_timer(&select_effect_timer);
         if (menu_state == play) {
           fade_to_main_bgm_music();
         }
       } else if (game_state == controls_menu) {
         PlaySound(select_sfx);
-        select_effect_timer = select_effect_total_time;
+        start_timer(&select_effect_timer);
       } else if(game_state == game_over) {
         PlaySound(select_sfx);
         game_state = playing;
@@ -251,7 +256,7 @@ int main() {
     }
     EndMode2D();
 
-    bool effect_timer = 0.1 < select_effect_timer && 0.5 < select_effect_timer;
+    bool effect_timer = 0.1 < select_effect_timer.current && 0.5 < select_effect_timer.current;
     if (game_state == main_menu) {
       draw_text(font_title, TextToUpper(game_title), (Vector2){half_screen_width, half_screen_height - 150}, (Color){226, 232, 240, 255});
 
