@@ -116,7 +116,7 @@ int main() {
   init_bullets();
   init_ship();
 
-  float slowmotion_timer = 0;
+  Timer slowmotion_timer = {.total = 1};
 
   score_t highscore = load_highscore();
 
@@ -126,11 +126,10 @@ int main() {
 
     update_timer(&select_effect_timer, dt);
 
-    bool is_slowmotion = slowmotion_timer > 0;
+    bool is_slowmotion = slowmotion_timer.current > 0;
     float slowmotion_factor = is_slowmotion ? 0.05 : 1;
-    if(is_slowmotion) {
-      slowmotion_timer -= dt;
-    }
+    update_timer(&slowmotion_timer, dt);
+
     if(!is_slowmotion && game_state == hit_stop) {
       game_state = game_over;
       if(score > highscore) {
@@ -231,7 +230,7 @@ int main() {
             StopMusicStream(main_bgm);
             PlaySound(lose_sfx);
           }
-          slowmotion_timer = 1;
+          start_timer(&slowmotion_timer);
           update_score_meteor();
           shake_camera();
         }
