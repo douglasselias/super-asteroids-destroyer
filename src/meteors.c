@@ -9,7 +9,7 @@ typedef struct {
   Vector2 velocity;
   Texture2D texture;
   int radius;
-  float particles_timer;
+  Timer particles_timer;
   Explosion_Particle explosion_particles[total_explosion_particles];
 } Meteor;
 
@@ -28,12 +28,12 @@ void init_meteors() {
 
   for(int i = 0; i < total_meteors; i++) {
     spawn_meteor(&meteors[i]);
+    meteors[i].particles_timer = (Timer){.total = 1};
   }
 }
 
-float explosion_particle_total_timeout = 1;
 void set_explosion_particles(Vector2 meteor_center, Meteor* meteor) {
-  meteor->particles_timer = explosion_particle_total_timeout;
+  start_timer(&(meteor->particles_timer));
   for(int i = 0; i < total_explosion_particles; i++) {
     float radians = i * DEG2RAD;
     meteor->explosion_particles[i] = (Explosion_Particle){
@@ -44,13 +44,9 @@ void set_explosion_particles(Vector2 meteor_center, Meteor* meteor) {
 }
 
 void update_explosion_particles(Meteor* meteor, float dt, bool is_slowmotion, float slowmotion_factor) {
-  if(meteor->particles_timer > 0) {
-    meteor->particles_timer -= dt * slowmotion_factor;
-  } else {
-    meteor->particles_timer = -1;
-  }
+  update_timer(&(meteor->particles_timer), dt * slowmotion_factor);
   for(int i = 0; i < total_explosion_particles; i++) {
-    if(meteor->particles_timer > 0) {
+    if(meteor->particles_timer.current > 0) {
       meteor->explosion_particles[i].position.x += meteor->explosion_particles[i].velocity.x * dt * slowmotion_factor;
       meteor->explosion_particles[i].position.y += meteor->explosion_particles[i].velocity.y * dt * slowmotion_factor;
     } else {
@@ -63,7 +59,6 @@ void update_explosion_particles(Meteor* meteor, float dt, bool is_slowmotion, fl
 void reset_meteors() {
   for(int i = 0; i < total_meteors; i++) {
     spawn_meteor(&meteors[i]);
-    meteors[i].particles_timer = -1;
     for(int j = 0; j < total_explosion_particles; j++) {
       meteors[i].explosion_particles[j].position = (Vector2){-1000, -1000};
       meteors[i].explosion_particles[j].velocity = (Vector2){0, 0};
@@ -75,10 +70,9 @@ void draw_meteors() {
   for(int i = 0; i < total_meteors; i++) {
     DrawTextureV(meteors[i].texture, meteors[i].position, WHITE);
     for(int j = 0; j < total_explosion_particles; j++) {
-      float timeout = meteors[i].particles_timer;
-      if(timeout > 0) {
-        float fade_percent = timeout / explosion_particle_total_timeout;
-        DrawCircleV(meteors[i].explosion_particles[j].position, 1, (Color){255, 255, 255, 255 * fade_percent});
+      Timer t = meteors[i].particles_timer;
+      if(t.current > 0) {
+        DrawCircleV(meteors[i].explosion_particles[j].position, 1, (Color){255, 255, 255, 255 * t.percent});
       }
     }
   }

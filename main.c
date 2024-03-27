@@ -5,6 +5,7 @@
 #include "vendor/stb_perlin.h"
 
 #include "src/constants.c"
+#include "src/timer.c"
 #include "src/camera.c"
 #include "src/stars.c"
 #include "src/meteors.c"
@@ -14,7 +15,6 @@
 #include "src/controls_menu.c"
 #include "src/music.c"
 #include "src/score.c"
-#include "src/timer.c"
 
 typedef enum {
   main_menu,
@@ -122,8 +122,7 @@ int main() {
 
   while (!WindowShouldClose()) {
     float dt = GetFrameTime();
-    /// @todo:
-    // update_music(dt);
+    update_music(dt);
 
     update_timer(&select_effect_timer, dt);
 

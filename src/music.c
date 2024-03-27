@@ -1,7 +1,16 @@
-Music main_bgm;
-Music menu_bgm;
-float music_fade_timer = 0;
-float music_fade_total_time = 2;
+static Music main_bgm;
+static Music menu_bgm;
+
+void music_fade_update(Timer* timer, float dt);
+Timer music_fade_timer = {
+  .total = 2,
+  .update_fn = music_fade_update,
+};
+
+void music_fade_update(Timer* timer, float dt) {
+  SetMusicVolume(menu_bgm, timer->percent);
+  SetMusicVolume(main_bgm, 1 - timer->percent);
+}
 
 void init_music() {
   main_bgm = LoadMusicStream("assets/stargaze.ogg");
@@ -13,15 +22,10 @@ void update_music(float dt) {
   UpdateMusicStream(menu_bgm);
   UpdateMusicStream(main_bgm);
 
-  if (music_fade_timer > 0) {
-    music_fade_timer -= dt;
-    float percent = music_fade_timer / music_fade_total_time;
-    SetMusicVolume(menu_bgm, percent);
-    SetMusicVolume(main_bgm, 1 - percent);
-  }
+  update_timer(&music_fade_timer, dt);
 }
 
 void fade_to_main_bgm_music() {
   PlayMusicStream(main_bgm);
-  music_fade_timer = music_fade_total_time;
+  start_timer(&music_fade_timer);
 }
