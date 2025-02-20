@@ -3,7 +3,7 @@ Texture2D planet_gas_texture;
 float gas_rotation = 0;
 
 void init_planet() {
-  planet_texture = LoadTexture("assets/planet.png");
+  planet_texture     = LoadTexture("assets/planet.png");
   planet_gas_texture = LoadTexture("assets/planet_gas.png");
 }
 

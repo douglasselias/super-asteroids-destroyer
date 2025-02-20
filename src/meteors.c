@@ -118,20 +118,20 @@ void spawn_meteor(Meteor *meteor) {
     /// hex numbers just to keep aligned :)
     /// top
     case 0x0: angle = GetRandomValue(270, 270 + 60); break;
-    case 0x1: angle = GetRandomValue(190, 350); break;
+    case 0x1: angle = GetRandomValue(190, 350);      break;
     case 0x2: angle = GetRandomValue(270 - 60, 270); break;
     /// right:
     case 0x3: angle = GetRandomValue(180, 180 + 60); break;
-    case 0x4: angle = GetRandomValue(100, 170); break;
+    case 0x4: angle = GetRandomValue(100, 170);      break;
     case 0x5: angle = GetRandomValue(180 - 60, 180); break;
     /// bottom:
-    case 0x6: angle = GetRandomValue(90 - 60, 90); break;
-    case 0x7: angle = GetRandomValue(10, 170); break;
+    case 0x6: angle = GetRandomValue(90 - 60, 90);  break;
+    case 0x7: angle = GetRandomValue(10, 170);      break;
     case 0x8: angle = GetRandomValue(90, 90  + 60); break;
     /// left:
-    case 0x9: angle = GetRandomValue(360 - 60, 360); break;
+    case 0x9: angle = GetRandomValue(360 - 60, 360);  break;
     case 0xa: angle = GetRandomValue(280, 270 + 160); break;
-    case 0xb: angle = GetRandomValue(0, 60); break;
+    case 0xb: angle = GetRandomValue(0, 60);          break;
   }
   angle *= DEG2RAD;
   int speed = GetRandomValue(50, 250);

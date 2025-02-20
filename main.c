@@ -1,7 +1,6 @@
 #include "vendor/raylib.h"
 #include "vendor/raymath.h"
 
-// #define STB_PERLIN_IMPLEMENTATION
 #include "vendor/stb_perlin.h"
 
 #include "src/constants.c"
@@ -37,10 +36,10 @@ void draw_text(Font font, const char *text, Vector2 position, Color color) {
 
 bool is_out_of_bounds(Vector2 position) {
   float despawn_offset = 500;
-  float top_despawn_zone = -despawn_offset;
-  float right_despawn_zone = screen_width + despawn_offset;
-  float bottom_despawn_zone = screen_height + despawn_offset;
-  float left_despawn_zone = -despawn_offset;
+  float top_despawn_zone    = -despawn_offset;
+  float left_despawn_zone   = -despawn_offset;
+  float right_despawn_zone  =  despawn_offset + screen_width;
+  float bottom_despawn_zone =  despawn_offset + screen_height;
 
   if(position.y < top_despawn_zone
   || position.x > right_despawn_zone
@@ -60,7 +59,7 @@ int main() {
 
   ChangeDirectory("..");
 
-  Font font = LoadFontEx("assets/kenney_pixel.ttf", 34, 0, 250);
+  Font font       = LoadFontEx("assets/kenney_pixel.ttf",    34, 0, 250);
   Font font_title = LoadFontEx("assets/not_jam_slab_14.ttf", 34, 0, 250);
   SetTextLineSpacing(34);
 
@@ -68,6 +67,7 @@ int main() {
   Sound click_sfx = LoadSound("assets/click.wav");
   Sound select_sfx = LoadSound("assets/select.wav");
   Sound booster_sfx = LoadSound("assets/booster.ogg");
+
   float select_effect_timer = 0;
   float select_effect_total_time = 0.6f;
 
@@ -257,13 +257,9 @@ int main() {
     if (game_state == main_menu) {
       draw_text(font_title, TextToUpper(game_title), (Vector2){half_screen_width, half_screen_height - 150}, (Color){226, 232, 240, 255});
 
-      draw_text(font, "Start", (Vector2){half_screen_width, half_screen_height},
-                 menu_state == play && !effect_timer ? AQUA : WHITE);
-      draw_text(
-          font, "Controls", (Vector2){half_screen_width, half_screen_height + 40},
-          menu_state == controls && !effect_timer ? AQUA : WHITE);
-      draw_text(font, "Exit", (Vector2){half_screen_width, half_screen_height + 40 * 2},
-                menu_state == exit && !effect_timer ? AQUA : WHITE);
+      draw_text(font, "Start", (Vector2){half_screen_width, half_screen_height}, menu_state == play && !effect_timer ? AQUA : WHITE);
+      draw_text(font, "Controls", (Vector2){half_screen_width, half_screen_height + 40}, menu_state == controls && !effect_timer ? AQUA : WHITE);
+      draw_text(font, "Exit", (Vector2){half_screen_width, half_screen_height + 40 * 2}, menu_state == exit && !effect_timer ? AQUA : WHITE);
     } else if (game_state == controls_menu) {
       draw_controls_menu(font, effect_timer);
     } else if(game_state == game_over) {
