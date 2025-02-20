@@ -1,7 +1,7 @@
-#include "raylib.h"
-#include "raymath.h"
+#include "vendor/raylib.h"
+#include "vendor/raymath.h"
 
-#define STB_PERLIN_IMPLEMENTATION
+// #define STB_PERLIN_IMPLEMENTATION
 #include "vendor/stb_perlin.h"
 
 #include "src/constants.c"
@@ -58,6 +58,8 @@ int main() {
   SetTargetFPS(60);
   InitAudioDevice();
 
+  ChangeDirectory("..");
+
   Font font = LoadFontEx("assets/kenney_pixel.ttf", 34, 0, 250);
   Font font_title = LoadFontEx("assets/not_jam_slab_14.ttf", 34, 0, 250);
   SetTextLineSpacing(34);
@@ -67,7 +69,7 @@ int main() {
   Sound select_sfx = LoadSound("assets/select.wav");
   Sound booster_sfx = LoadSound("assets/booster.ogg");
   float select_effect_timer = 0;
-  float select_effect_total_time = 0.6;
+  float select_effect_total_time = 0.6f;
 
   init_music();
   init_controls_menu();
