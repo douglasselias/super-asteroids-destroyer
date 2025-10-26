@@ -4,7 +4,8 @@ Texture2D key_w;
 Texture2D key_enter;
 Texture2D key_space;
 
-void init_controls_menu() {
+void init_controls_menu()
+{
   key_a = LoadTexture("assets/keyboard_a.png");
   key_d = LoadTexture("assets/keyboard_d.png");
   key_w = LoadTexture("assets/keyboard_w.png");
@@ -14,10 +15,11 @@ void init_controls_menu() {
 
 void draw_text(Font font, const char *text, Vector2 position, Color color);
 
-void draw_controls_menu(Font font, bool effect_timer) {
+void draw_controls_menu(Font font, bool effect_timer)
+{
   draw_text(font, "Controls", (Vector2){half_screen_width, 70}, WHITE);
-  int text_y = 230;
-  int keys_y = text_y + 50;
+  s32 text_y = 230;
+  s32 keys_y = text_y + 50;
 
   draw_text(font, "Rotate", (Vector2){half_screen_width - 270, text_y}, WHITE);
   DrawTexture(key_a, half_screen_width - 400, keys_y, WHITE);

@@ -1,20 +1,26 @@
+#pragma comment(lib, "user32")
+#pragma comment(lib, "shell32")
+#pragma comment(lib, "gdi32")
+#pragma comment(lib, "winmm")
+#pragma comment(lib, "opengl32")
+
 #include "vendor/raylib.h"
 #include "vendor/raymath.h"
 
 #include "vendor/stb_perlin.h"
 
 #include "src/constants.c"
-#include "src/camera.c"
-#include "src/stars.c"
-#include "src/meteors.c"
-#include "src/planet.c"
-#include "src/bullets.c"
-#include "src/ship.c"
-#include "src/controls_menu.c"
-#include "src/music.c"
-#include "src/score.c"
 
-typedef enum {
+typedef struct
+{
+  Vector2 position;
+  Vector2 velocity;
+  f32 rotation;
+  f32 radius;
+} Thing;
+
+typedef enum
+{
   main_menu,
   controls_menu,
   playing,
@@ -23,38 +29,51 @@ typedef enum {
   game_over,
 } Game_State;
 
-typedef enum {
+typedef enum
+{
   play,
   controls,
   exit,
 } Menu_State;
 
-void draw_text(Font font, const char *text, Vector2 position, Color color) {
-  int font_size = 34, spacing = 1;
-  DrawTextEx(font, text, (Vector2){position.x - (MeasureTextEx(font, text, font_size, spacing).x / 2.0), position.y}, font_size, spacing, color);
-}
+Game_State game_state = main_menu;
+Menu_State menu_state = play;
 
-bool is_out_of_bounds(Vector2 position) {
-  float despawn_offset = 500;
-  float top_despawn_zone    = -despawn_offset;
-  float left_despawn_zone   = -despawn_offset;
-  float right_despawn_zone  =  despawn_offset + screen_width;
-  float bottom_despawn_zone =  despawn_offset + screen_height;
+#include "src/score.c"
+#include "src/ui.c"
+#include "src/camera.c"
+#include "src/stars.c"
+#include "src/meteors.c"
+#include "src/planet.c"
+#include "src/bullets.c"
+#include "src/ship.c"
+#include "src/controls_menu.c"
+#include "src/music.c"
+
+bool is_out_of_bounds(Vector2 position)
+{
+  f32 despawn_offset = 500;
+  f32 top_despawn_zone    = -despawn_offset;
+  f32 left_despawn_zone   = -despawn_offset;
+  f32 right_despawn_zone  =  despawn_offset + screen_width;
+  f32 bottom_despawn_zone =  despawn_offset + screen_height;
 
   if(position.y < top_despawn_zone
   || position.x > right_despawn_zone
   || position.y > bottom_despawn_zone
-  || position.x < left_despawn_zone) {
+  || position.x < left_despawn_zone)
+  {
     return true;
   }
 
   return false;
 }
 
-int main() {
+s32 main()
+{
   SetTraceLogLevel(LOG_WARNING);
   InitWindow(screen_width, screen_height, game_title);
-  SetTargetFPS(60);
+  SetTargetFPS(120);
   InitAudioDevice();
 
   ChangeDirectory("..");
@@ -63,13 +82,13 @@ int main() {
   Font font_title = LoadFontEx("assets/not_jam_slab_14.ttf", 34, 0, 250);
   SetTextLineSpacing(34);
 
-  Sound hurt_sfx = LoadSound("assets/hurt.wav");
-  Sound click_sfx = LoadSound("assets/click.wav");
-  Sound select_sfx = LoadSound("assets/select.wav");
+  Sound hurt_sfx    = LoadSound("assets/hurt.wav");
+  Sound click_sfx   = LoadSound("assets/click.wav");
+  Sound select_sfx  = LoadSound("assets/select.wav");
   Sound booster_sfx = LoadSound("assets/booster.ogg");
 
-  float select_effect_timer = 0;
-  float select_effect_total_time = 0.6f;
+  f32 select_effect_timer = 0;
+  f32 select_effect_total_time = 0.6f;
 
   init_music();
   init_controls_menu();
@@ -80,124 +99,188 @@ int main() {
   init_bullets();
   init_ship();
 
-  float slowmotion_timer = 0;
+  f32 slowmotion_timer = 0;
+  load_highscore();
 
-  Game_State game_state = main_menu;
-  Menu_State menu_state = play;
-  score_t highscore = load_highscore();
-
-  while (!WindowShouldClose()) {
-    float dt = GetFrameTime();
-    update_music(dt);
-
-    if (select_effect_timer > 0) {
-      select_effect_timer -= dt;
-      if (select_effect_timer < 0) {
-        select_effect_timer = 0;
-        switch(game_state) {
-          case playing: break;
-          case paused: break;
-          case hit_stop: break;
-          case game_over: break;
-          case controls_menu: {
-            game_state = main_menu;
-            break;
-          }
-          case main_menu: {
-            switch(menu_state) {
-              case play: {
-                game_state = playing;
-                break;
-              }
-              case controls: {
-                game_state = controls_menu;
-                break;
-              }
-              case exit: {
-                CloseWindow();
-                break;
-              }
-            }
-            break;
-          }
-        }
-      }
-    }
+  while (!WindowShouldClose())
+  {
+    f32 dt = GetFrameTime();
 
     bool is_slowmotion = slowmotion_timer > 0;
-    float slowmotion_factor = is_slowmotion ? 0.05 : 1;
-    if(is_slowmotion) {
+    f32 slowmotion_factor = is_slowmotion ? 0.05 : 1;
+
+    switch(game_state)
+    {
+      case main_menu:
+      {
+        if (IsKeyPressed(KEY_W) && select_effect_timer == 0)
+        {
+          PlaySound(click_sfx);
+          
+          if(--menu_state == -1)
+          {
+            menu_state = 2;
+          }
+        }
+
+        if (IsKeyPressed(KEY_S) && select_effect_timer == 0)
+        {
+          PlaySound(click_sfx);
+          
+          if(++menu_state == 3)
+          {
+            menu_state = 0;
+          }
+        }
+
+        if (IsKeyPressed(KEY_ENTER))
+        {
+          PlaySound(select_sfx);
+          select_effect_timer = select_effect_total_time;
+
+          if (menu_state == play)
+          {
+            fade_to_main_bgm_music();
+          }
+        }
+      }
+      break;
+      case controls_menu:
+      {
+        if (IsKeyPressed(KEY_ENTER))
+        {
+          PlaySound(select_sfx);
+          select_effect_timer = select_effect_total_time;
+        }
+      }
+      break;
+      case playing:
+      {
+        if (IsKeyDown(KEY_A))
+        {
+          ship.rotation -= rotation_speed * dt * slowmotion_factor;
+        }
+
+        if (IsKeyDown(KEY_D))
+        {
+          ship.rotation += rotation_speed * dt * slowmotion_factor;
+        }
+
+        if (IsKeyDown(KEY_W))
+        {
+          accelerate_ship(dt, slowmotion_factor);
+          score += VELOCITY_POINTS;
+
+          if(!IsSoundPlaying(booster_sfx))
+          {
+            PlaySound(booster_sfx);
+          }
+        }
+        else
+        {
+          StopSound(booster_sfx);
+        }
+
+        if(IsKeyPressed(KEY_SPACE))
+        {
+          shoot_bullet(ship.position, ship.rotation);
+        }
+
+        if (IsKeyPressed(KEY_ENTER))
+        {
+          game_state = paused;
+          PauseMusicStream(main_bgm);
+        }
+      }
+      break;
+      case paused:
+      {
+        if (IsKeyPressed(KEY_ENTER))
+        {
+          game_state = playing;
+          PlayMusicStream(main_bgm);
+        }
+      }
+      break;
+      case hit_stop:
+      {
+
+      }
+      break;
+      case game_over:
+      {
+        if (IsKeyPressed(KEY_ENTER))
+        {
+          PlaySound(select_sfx);
+          game_state = playing;
+          score = 0;
+          reset_meteors();
+          reset_bullets();
+          reset_ship();
+          PlayMusicStream(main_bgm);
+        }
+      }
+      break;
+    }
+
+    update_music(dt);
+
+    if (select_effect_timer > 0)
+    {
+      select_effect_timer -= dt;
+      
+      if (select_effect_timer < 0)
+      {
+        select_effect_timer = 0;
+        switch(game_state) {
+          case playing:
+          case paused:
+          case hit_stop:
+          case game_over: break;
+          case controls_menu:
+          {
+            game_state = main_menu;
+          }
+          break;
+          case main_menu:
+          {
+            switch(menu_state)
+            {
+              case play:
+              {
+                game_state = playing;
+              }
+              break;
+              case controls:
+              {
+                game_state = controls_menu;
+              }
+              break;
+              case exit:
+              {
+                CloseWindow();
+              }
+              break;
+            }
+          }
+          break;
+        }
+      }
+    }
+    
+    if(is_slowmotion)
+    {
       slowmotion_timer -= dt;
     }
-    if(!is_slowmotion && game_state == hit_stop) {
+    
+    if(!is_slowmotion && game_state == hit_stop)
+    {
       game_state = game_over;
-      if(score > highscore) {
-        save_highscore();
+
+      if(score > highscore)
+      {
         highscore = score;
-      }
-    }
-
-    if (IsKeyDown(KEY_A)) {
-      if (game_state == playing)
-        ship_rotation_deg -= rotation_speed * dt * slowmotion_factor;
-    }
-    if (IsKeyDown(KEY_D)) {
-      if (game_state == playing)
-        ship_rotation_deg += rotation_speed * dt * slowmotion_factor;
-    }
-    if (IsKeyDown(KEY_W)) {
-      if (game_state == playing) {
-        accelerate_ship(dt, slowmotion_factor);
-        score += velocity_score;
-        if(!IsSoundPlaying(booster_sfx))
-          PlaySound(booster_sfx);
-      }
-    } else {
-      if(IsSoundPlaying(booster_sfx))
-          StopSound(booster_sfx);
-    }
-    if(IsKeyPressed(KEY_SPACE)) {
-      if (game_state == playing) {
-        shoot_bullet(ship_position, ship_rotation_deg);
-      }
-    }
-    if (IsKeyPressed(KEY_W) && select_effect_timer == 0) {
-      if (game_state == main_menu) {
-        PlaySound(click_sfx);
-        if(--menu_state == -1) menu_state = 2;
-      }
-    }
-    if (IsKeyPressed(KEY_S) && select_effect_timer == 0) {
-      if (game_state == main_menu) {
-        PlaySound(click_sfx);
-        if(++menu_state == 3) menu_state = 0;
-      }
-    }
-
-    if (IsKeyPressed(KEY_ENTER)) {
-      if (game_state == main_menu) {
-        PlaySound(select_sfx);
-        select_effect_timer = select_effect_total_time;
-        if (menu_state == play) {
-          fade_to_main_bgm_music();
-        }
-      } else if (game_state == controls_menu) {
-        PlaySound(select_sfx);
-        select_effect_timer = select_effect_total_time;
-      } else if(game_state == game_over) {
-        PlaySound(select_sfx);
-        game_state = playing;
-        score = 0;
-        reset_meteors();
-        reset_bullets();
-        reset_ship();
-        PlayMusicStream(main_bgm);
-      } else if(game_state == playing) {
-        game_state = paused;
-        PauseMusicStream(main_bgm);
-      } else if(game_state == paused) {
-        game_state = playing;
-        PlayMusicStream(main_bgm);
+        save_highscore();
       }
     }
 
@@ -205,34 +288,42 @@ int main() {
     update_stars();
     update_planet(dt);
 
-    if(game_state == playing) {
+    if(game_state == playing)
+    {
       update_ship(dt, slowmotion_factor);
       update_bullets(dt, slowmotion_factor);
 
-      for(int i = 0; i < total_meteors; i++) {
+      for(s32 i = 0; i < METEORS_COUNT; i++)
+      {
         meteors[i].position.x += meteors[i].velocity.x * dt * slowmotion_factor;
         meteors[i].position.y += meteors[i].velocity.y * dt * slowmotion_factor;
 
         update_explosion_particles(&meteors[i], dt, is_slowmotion, slowmotion_factor);
 
-        if(is_out_of_bounds(meteors[i].position)) {
+        if(is_out_of_bounds(meteors[i].position))
+        {
           spawn_meteor(&meteors[i]);
         }
 
         Vector2 meteor_center = {meteors[i].position.x + meteors[i].texture.width / 2.0, meteors[i].position.y + meteors[i].texture.height / 2.0};
-        if(CheckCollisionCircles(meteor_center, meteors[i].radius, ship_position, ship_radius)) {
+        if(CheckCollisionCircles(meteor_center, meteors[i].radius, ship.position, ship.radius))
+        {
           PlaySound(hurt_sfx);
           set_explosion_particles(meteor_center, &meteors[i]);
           spawn_meteor(&meteors[i]);
-          if(--energy == 0) {
+
+          if(--energy == 0)
+          {
             game_state = hit_stop;
             StopMusicStream(main_bgm);
             PlaySound(lose_sfx);
           }
+
           slowmotion_timer = 1;
           update_score_meteor();
           shake_camera();
         }
+
         bullets_check_collision_with_meteor(meteor_center, &meteors[i]);
       }
     }
@@ -244,32 +335,46 @@ int main() {
     draw_stars();
     draw_planet();
 
-    if (game_state == playing || game_state == hit_stop) {
+    if (game_state == playing || game_state == hit_stop)
+    {
       draw_meteors();
       draw_bullets();
       draw_ship();
       draw_energy();
-      draw_text(font, TextFormat("Score %d", score), (Vector2){280, 15}, WHITE);
     }
+
+    draw_score(font);
+
     EndMode2D();
 
     bool effect_timer = 0.1 < select_effect_timer && 0.5 < select_effect_timer;
-    if (game_state == main_menu) {
-      draw_text(font_title, TextToUpper(game_title), (Vector2){half_screen_width, half_screen_height - 150}, (Color){226, 232, 240, 255});
 
-      draw_text(font, "Start", (Vector2){half_screen_width, half_screen_height}, menu_state == play && !effect_timer ? AQUA : WHITE);
-      draw_text(font, "Controls", (Vector2){half_screen_width, half_screen_height + 40}, menu_state == controls && !effect_timer ? AQUA : WHITE);
-      draw_text(font, "Exit", (Vector2){half_screen_width, half_screen_height + 40 * 2}, menu_state == exit && !effect_timer ? AQUA : WHITE);
-    } else if (game_state == controls_menu) {
-      draw_controls_menu(font, effect_timer);
-    } else if(game_state == game_over) {
-      draw_text(font_title, "GAME OVER", (Vector2){half_screen_width, half_screen_height - 150}, RED);
-      draw_text(font, TextFormat("Score: %d", score), (Vector2){half_screen_width, half_screen_height - 50}, AQUA);
-      draw_text(font, TextFormat("Highscore: %d", highscore), (Vector2){half_screen_width, half_screen_height - 100}, AQUA);
-      draw_text(font, "Press Enter to play again", (Vector2){half_screen_width, half_screen_height}, WHITE);
-    } else if(game_state == paused) {
-      draw_text(font_title, "PAUSED", (Vector2){half_screen_width, half_screen_height}, WHITE);
+    switch(game_state)
+    {
+      case main_menu:
+      {
+        draw_main_menu(font_title, font, effect_timer);
+      }
+      break;
+      case controls_menu:
+      {
+        draw_controls_menu(font, effect_timer);
+      }
+      break;
+      case game_over:
+      {
+        draw_game_over_menu(font_title, font);
+      }
+      break;
+      case paused:
+      {
+        draw_text(font_title, "PAUSED", (Vector2){half_screen_width, half_screen_height}, WHITE);
+      }
+      break;
+      case playing:
+      case hit_stop: break;
     }
+
     EndDrawing();
   }
 

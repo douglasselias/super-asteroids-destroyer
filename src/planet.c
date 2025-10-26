@@ -1,23 +1,22 @@
 Texture2D planet_texture;
 Texture2D planet_gas_texture;
-float gas_rotation = 0;
+f32 gas_rotation = 0;
 
-void init_planet() {
+void init_planet()
+{
   planet_texture     = LoadTexture("assets/planet.png");
   planet_gas_texture = LoadTexture("assets/planet_gas.png");
 }
 
-void update_planet(float dt) {
-  gas_rotation += dt;
-  if(gas_rotation > 360)
-    gas_rotation = 0;
+void update_planet(f32 dt)
+{
+  gas_rotation = Wrap(gas_rotation + dt, 0, 360);
 }
 
-void draw_planet() {
+void draw_planet()
+{
   DrawTextureV(planet_texture, (Vector2){half_screen_width - 200, half_screen_height - 100}, WHITE);
-  DrawTexturePro(planet_gas_texture,
-    (Rectangle){0, 0, planet_gas_texture.width, planet_gas_texture.height},
-    (Rectangle){half_screen_width + 450, half_screen_height + 500, planet_gas_texture.width, planet_gas_texture.height},
-    (Vector2){planet_gas_texture.width / 2.0, planet_gas_texture.height / 2.0},
-    gas_rotation, WHITE);
+
+  Vector2 position = {half_screen_width + 450, half_screen_height + 500};
+  draw_texture_centered(planet_gas_texture, position, gas_rotation);
 }
