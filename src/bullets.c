@@ -9,11 +9,10 @@ Sound explosion_sfx;
 
 void reset_bullet(s32 index)
 {
-  bullets[index] = (Thing){
-    (Vector2){-30, -30},
-    (Vector2){0, 0},
-    0,
-  };
+  Thing *bullet = &bullets[index];
+  bullet->position = (Vector2){-30, -30};
+  bullet->velocity = (Vector2){0, 0};
+  bullet->radius   = bullet_radius;
 }
 
 void reset_bullets()
@@ -67,7 +66,9 @@ void bullets_check_collision_with_meteor(Vector2 meteor_center, Meteor* meteor)
 {
   for(s32 i = 0; i < BULLETS_COUNT; i++)
   {
+    // TODO: Meteor position is not center!
     if(CheckCollisionCircles(meteor_center, meteor->radius, bullets[i].position, bullet_radius))
+    // if(things_collided(meteor, bullets[i]))
     {
       shake_camera();
       update_score_meteor();

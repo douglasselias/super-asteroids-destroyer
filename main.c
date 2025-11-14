@@ -17,6 +17,20 @@ typedef struct
   Vector2 velocity;
   f32 rotation;
   f32 radius;
+
+  f32 timer;
+  f32 total_time;
+  
+  Font font;
+  Music music;
+  Texture2D texture;
+  Sound sound;
+  Color color;
+  Color texture_color;
+
+  // Thing *children;
+  u32 children_count;
+  char *text;
 } Thing;
 
 typedef enum
@@ -49,25 +63,7 @@ Menu_State menu_state = play;
 #include "src/ship.c"
 #include "src/controls_menu.c"
 #include "src/music.c"
-
-bool is_out_of_bounds(Vector2 position)
-{
-  f32 despawn_offset = 500;
-  f32 top_despawn_zone    = -despawn_offset;
-  f32 left_despawn_zone   = -despawn_offset;
-  f32 right_despawn_zone  =  despawn_offset + screen_width;
-  f32 bottom_despawn_zone =  despawn_offset + screen_height;
-
-  if(position.y < top_despawn_zone
-  || position.x > right_despawn_zone
-  || position.y > bottom_despawn_zone
-  || position.x < left_despawn_zone)
-  {
-    return true;
-  }
-
-  return false;
-}
+#include "src/physics.c"
 
 s32 main()
 {
@@ -102,7 +98,7 @@ s32 main()
   f32 slowmotion_timer = 0;
   load_highscore();
 
-  while (!WindowShouldClose())
+  while(!WindowShouldClose())
   {
     f32 dt = GetFrameTime();
 
@@ -189,7 +185,7 @@ s32 main()
         if (IsKeyPressed(KEY_ENTER))
         {
           game_state = paused;
-          PauseMusicStream(main_bgm);
+          PauseMusicStream(main_bgm.music);
         }
       }
       break;
@@ -198,7 +194,7 @@ s32 main()
         if (IsKeyPressed(KEY_ENTER))
         {
           game_state = playing;
-          PlayMusicStream(main_bgm);
+          PlayMusicStream(main_bgm.music);
         }
       }
       break;
@@ -217,7 +213,7 @@ s32 main()
           reset_meteors();
           reset_bullets();
           reset_ship();
-          PlayMusicStream(main_bgm);
+          PlayMusicStream(main_bgm.music);
         }
       }
       break;
@@ -315,7 +311,7 @@ s32 main()
           if(--energy == 0)
           {
             game_state = hit_stop;
-            StopMusicStream(main_bgm);
+            StopMusicStream(main_bgm.music);
             PlaySound(lose_sfx);
           }
 

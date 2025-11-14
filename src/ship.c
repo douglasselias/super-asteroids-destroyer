@@ -1,6 +1,7 @@
-Texture2D ship_texture;
 Vector2 ship_acceleration = {300, 300};
 s32 rotation_speed = 500;
+
+Texture2D ship_texture;
 Texture2D fire_texture;
 
 Thing ship = {};
